@@ -1,1 +1,4 @@
 # capfizz
+
+```
+npm install 
