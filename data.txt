@@ -1,0 +1,3 @@
+COOKIE=session_id=your_new_session_id
+POINT_SELECTOR=span.user-points
+NODES=EA9Q2J6RH2SF.capfizz.com,6IMIKXFGXQVP.capfizz.com,HB0MQMD9VPGD.capfizz.com
