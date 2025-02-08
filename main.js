@@ -1,56 +1,39 @@
-const fs = require('fs');
-const path = require('path');
-const ping = require('ping');
 const axios = require('axios');
-const cheerio = require('cheerio');
+const fs = require('fs');
 
-// === Membaca konfigurasi dari file data.txt ===
-const CONFIG_FILE = path.join(__dirname, 'data.txt');
-const config = {};
+// Load data dari file data.txt
+const data = fs.readFileSync('data.txt', 'utf8').split('\n').reduce((acc, line) => {
+  const [key, value] = line.split('=');
+  acc[key.trim()] = value ? value.trim() : '';
+  return acc;
+}, {});
 
-// Membaca file dan menyimpan data ke dalam object config
-fs.readFileSync(CONFIG_FILE, 'utf-8').split('\n').forEach(line => {
-    const [key, value] = line.split('=');
-    if (key && value) {
-        config[key.trim()] = value.trim();
+// Node ID dan Cookie dari data.txt
+const NODE_ID = data.NODE_ID;
+const COOKIE = data.COOKIE;
+
+// URL API dengan Node ID
+const NODE_URL = `https://endpoint.capfizz.com/node/${NODE_ID}/status`;
+
+// Fungsi untuk ping node
+async function pingNode() {
+  try {
+    const response = await axios.get(NODE_URL, {
+      headers: {
+        'Cookie': COOKIE,
+      },
+    });
+
+    if (response.status === 200) {
+      console.log(`Ping sukses ke Node ID ${NODE_ID}: ${NODE_URL}`);
+    } else {
+      console.log(`Ping gagal ke Node ID ${NODE_ID}: ${NODE_URL}, Status: ${response.status}`);
     }
-});
-
-// === Konfigurasi ===
-const DASHBOARD_URL = 'https://mainnet.capfizz.com/dashboard'; // URL dashboard Capfizz
-const COOKIE = config.COOKIE || ''; // Cookie dari file data.txt
-const NODE_ADDRESSES = config.NODES ? config.NODES.split(',') : []; // Membaca daftar node dari file
-const LOG_FILE = path.join(__dirname, 'capfizz_monitor.log');
-const INTERVAL = 60 * 1000; // 60 detik
-
-// === Fungsi untuk melakukan ping pada semua node ===
-async function checkPing(node) {
-    try {
-        const res = await ping.promise.probe(node);
-        return res.time ? `${res.time}ms` : 'Timeout';
-    } catch (error) {
-        return 'Error';
-    }
+  } catch (error) {
+    console.error(`Error saat ping Node ID ${NODE_ID}: ${error.message}`);
+  }
 }
 
-// === Fungsi utama monitoring ===
-async function monitorCapfizz() {
-    const timestamp = new Date().toISOString();
-    let logEntries = [];
-
-    for (const node of NODE_ADDRESSES) {
-        const pingTime = await checkPing(node);
-        const points = await checkCapfizzPoints();
-
-        const logEntry = `[${timestamp}] Node: ${node} | Ping: ${pingTime} | Points: ${points}`;
-        logEntries.push(logEntry);
-        console.log(logEntry);
-    }
-
-    // Simpan hasil monitoring ke file log
-    fs.appendFileSync(LOG_FILE, logEntries.join('\n') + '\n');
-}
-
-// === Jalankan monitoring setiap INTERVAL ===
-setInterval(monitorCapfizz, INTERVAL);
-monitorCapfizz();
+// Jalankan ping secara berkala (setiap 5 menit)
+setInterval(pingNode, 300000); // 300000 ms = 5 menit
+pingNode();
