@@ -19,7 +19,6 @@ fs.readFileSync(CONFIG_FILE, 'utf-8').split('\n').forEach(line => {
 // === Konfigurasi ===
 const DASHBOARD_URL = 'https://mainnet.capfizz.com/dashboard'; // URL dashboard Capfizz
 const COOKIE = config.COOKIE || ''; // Cookie dari file data.txt
-const POINT_SELECTOR = config.POINT_SELECTOR || 'span.user-points'; // Selector dari file data.txt
 const NODE_ADDRESSES = config.NODES ? config.NODES.split(',') : []; // Membaca daftar node dari file
 const LOG_FILE = path.join(__dirname, 'capfizz_monitor.log');
 const INTERVAL = 60 * 1000; // 60 detik
@@ -31,21 +30,6 @@ async function checkPing(node) {
         return res.time ? `${res.time}ms` : 'Timeout';
     } catch (error) {
         return 'Error';
-    }
-}
-
-// === Fungsi untuk mengambil poin dari dashboard ===
-async function checkCapfizzPoints() {
-    try {
-        const response = await axios.get(DASHBOARD_URL, {
-            headers: { Cookie: COOKIE }
-        });
-
-        const $ = cheerio.load(response.data);
-        const points = $(POINT_SELECTOR).text().trim();
-        return points || 'Tidak dapat mengambil poin';
-    } catch (error) {
-        return 'Gagal mengakses dashboard';
     }
 }
 
